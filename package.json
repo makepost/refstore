@@ -5,7 +5,7 @@
   "main": "index",
   "types": "index",
   "scripts": {
-    "format": "tsc && tslint --fix '*.js' '*.ts'",
+    "format": "tsc && tslint --fix '*.js' '*.ts' && ava",
     "test": "nyc ava -v && tsc && tslint '*.js' '*.ts'"
   },
   "keywords": [
@@ -16,8 +16,7 @@
   "author": "makepost <makepost@firemail.cc>",
   "license": "MIT",
   "peerDependencies": {
-    "inferno": "^5.5.0",
-    "inferno-create-element": "^5.5.0"
+    "inferno": "^5.5.0"
   },
   "devDependencies": {
     "ava": "^0.25.0",

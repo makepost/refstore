@@ -1,5 +1,4 @@
-const { Component } = require("inferno");
-const { createElement } = require("inferno-create-element");
+const { Component, createComponentVNode } = require("inferno");
 
 const $ = new class ModuleState {
   constructor() {
@@ -137,13 +136,12 @@ const inject = () => klass => {
   /** @type {any} */
   const __ = class extends Component {
     render() {
-      return createElement(
+      return createComponentVNode(
+        4,
         _,
-        {
-          ...this.context,
-          ...this.props
-        },
-        this.props.children
+        { ...this.context, ...this.props },
+        null,
+        null
       );
     }
   };
