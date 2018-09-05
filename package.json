@@ -1,6 +1,6 @@
 {
   "name": "refstore",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "State management for Inferno. Tiny bundle. MobX-like API",
   "main": "index",
   "types": "index",
