@@ -220,6 +220,54 @@ test.serial("injects, inheriting static methods", t => {
   render(null, dom.window.document.body);
 });
 
+test.serial("injects, preferring prop", t => {
+  class ValueService {
+    constructor() {
+      this.value = "...";
+    }
+  }
+
+  /**
+   * @typedef IProps
+   * @property {ValueService?} [valueService]
+   *
+   * @extends Component<IProps>
+   */
+  class ValueView extends Component {
+    render() {
+      return createElement("input", {
+        value: nullthrows(this.props.valueService).value
+      });
+    }
+  }
+
+  const Value = inject("valueService")(observer(ValueView));
+
+  // @ts-ignore
+  const g = global;
+  const dom = new JSDOM();
+  g.document = dom.window.document;
+
+  const valueService = new ValueService();
+  valueService.value = "Success.";
+
+  const valueService1 = new ValueService();
+
+  render(
+    createElement(
+      Provider,
+      { valueService },
+      createElement(Value, { valueService: valueService1 })
+    ),
+    dom.window.document.body
+  );
+
+  const $input = dom.window.document.querySelector("input");
+  t.is($input.value, "...");
+
+  render(null, dom.window.document.body);
+});
+
 test.serial("observes", t => {
   class ValueService {
     constructor() {

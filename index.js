@@ -136,13 +136,18 @@ const inject = () => klass => {
   /** @type {any} */
   const __ = class extends Component {
     render() {
-      return createComponentVNode(
-        4,
-        _,
-        { ...this.context, ...this.props },
-        null,
-        null
-      );
+      const props = {};
+
+      // tslint:disable:forin
+      for (let key in this.context) {
+        props[key] = this.context[key];
+      }
+      for (let key in this.props) {
+        props[key] = this.props[key];
+      }
+      // tslint:enable:forin
+
+      return createComponentVNode(4, _, props, null, null);
     }
   };
 
