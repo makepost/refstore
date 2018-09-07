@@ -11,6 +11,11 @@ export function inject(...serviceNames: string[]): <T>(klass: T) => T;
 
 export function isObservableProp(target: any, key: string): boolean;
 
+export function matchPath(
+  pathname: string,
+  props: { exact?: boolean; path?: string }
+): { params: { [name: string]: string } } | null;
+
 export const observable: { ref: "Only observable.ref is supported." };
 
 export function observer<T>(klass: T): T;

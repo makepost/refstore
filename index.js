@@ -180,6 +180,44 @@ function isObservableProp(target, key) {
   return !!prop && !!prop.get && !!prop.set;
 }
 
+/**
+ * @param {string} pathname
+ * @param {{ exact?: boolean, path?: string }} props
+ */
+function matchPath(pathname, props) {
+  if (!props.path) {
+    return true;
+  }
+
+  const names = [""];
+  const res = [""];
+  const xs = props.path.split("/");
+
+  for (let i = 0; i < xs.length; i++) {
+    const x = xs[i];
+    const _ = /^:([^(]+)(\(.+)?/.exec(x);
+
+    names.push(_ ? _[1] : "");
+    res.push(_ ? _[2] || "([^/]+)" : x ? `(${x})` : "");
+  }
+
+  const matches = new RegExp(
+    `^${res.slice(1).join("/")}${props.exact ? "$" : "(/|$)"}`
+  ).exec(pathname);
+
+  if (!matches) {
+    return null;
+  }
+
+  const params = {};
+
+  for (let i = 1; i < names.length; i++) {
+    params[names[i]] = matches[i - 1];
+  }
+
+  return { params };
+}
+
 /** @type {{ ref: "Only observable.ref is supported." }} */
 const observable = { ref: "Only observable.ref is supported." };
 
@@ -263,6 +301,7 @@ exports.autorun = autorun;
 exports.decorate = decorate;
 exports.inject = inject;
 exports.isObservableProp = isObservableProp;
+exports.matchPath = matchPath;
 exports.observable = observable;
 exports.observer = observer;
 exports.useStaticRendering = useStaticRendering;

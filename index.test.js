@@ -9,6 +9,7 @@ const {
   autorun,
   decorate,
   inject,
+  matchPath,
   observable,
   observer,
   Provider,
@@ -312,6 +313,47 @@ test.serial("injects, skipping names not mentioned", t => {
   t.is(!!error, true);
 
   render(null, dom.window.document.body);
+});
+
+test("matches path", t => {
+  const Screen = {
+    Home: 0,
+    NotFound: 4,
+    Other: 3,
+    Settings: 1,
+    Test: 2
+  };
+
+  const routes = [
+    { component: Screen.Home, exact: true, path: "/" },
+    { component: Screen.Settings, path: "/settings" },
+    { component: Screen.Test, path: "/:id/:test([0-9]+)" },
+    { component: Screen.Other, exact: true, path: "/:id" },
+    { component: Screen.NotFound }
+  ];
+
+  const _ = (/** @type {string} */ path) =>
+    routes.findIndex(route => !!matchPath(path, route));
+
+  t.is(_("/"), Screen.Home);
+
+  t.is(_("/rules/012q"), Screen.NotFound);
+  t.is(_("/rules/foobar"), Screen.NotFound);
+
+  t.is(_("/rules"), Screen.Other);
+
+  t.is(_("/settings"), Screen.Settings);
+  t.is(_("/settings/0"), Screen.Settings);
+  t.is(_("/settings/foobar"), Screen.Settings);
+
+  t.is(_("/rules/0"), Screen.Test);
+  t.is(_("/rules/0/foobar"), Screen.Test);
+
+  const { params } = nullthrows(
+    matchPath("/rules/0/foobar", routes[Screen.Test])
+  );
+  t.is(params.id, "rules");
+  t.is(params.test, "0");
 });
 
 test.serial("observes", t => {
