@@ -2,11 +2,12 @@
   "name": "refstore",
   "version": "1.0.1",
   "description": "State management for Inferno. Tiny bundle. MobX-like API",
-  "main": "index",
-  "types": "index",
+  "main": "index.dist",
+  "types": "index.dist",
   "scripts": {
-    "format": "tsc && tslint --fix '*.js' '*.ts' && ava",
-    "test": "nyc ava -v && tsc && tslint '*.js' '*.ts'"
+    "format": "tsc && tslint --fix index.d.ts index.js index.test.js prepare.js && ava index.test.js",
+    "prepare": "node prepare.js",
+    "test": "nyc ava -v index.test.js && tsc && tslint index.d.ts index.js index.test.js prepare.js && node prepare && ava index.dist.test.js"
   },
   "keywords": [
     "inferno",

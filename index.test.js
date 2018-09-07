@@ -13,7 +13,7 @@ const {
   observer,
   Provider,
   useStaticRendering
-} = require(".");
+} = require("./index");
 
 test("autoruns", t => {
   let _ = "";
