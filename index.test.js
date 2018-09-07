@@ -268,6 +268,52 @@ test.serial("injects, preferring prop", t => {
   render(null, dom.window.document.body);
 });
 
+test.serial("injects, skipping names not mentioned", t => {
+  class ValueService {
+    constructor() {
+      this.value = "...";
+    }
+  }
+
+  /**
+   * @typedef IProps
+   * @property {ValueService?} [valueService]
+   *
+   * @extends Component<IProps>
+   */
+  class ValueView extends Component {
+    render() {
+      return createElement("input", {
+        value: nullthrows(this.props.valueService).value
+      });
+    }
+  }
+
+  const Value = inject("valueSrvice")(observer(ValueView));
+
+  // @ts-ignore
+  const g = global;
+  const dom = new JSDOM();
+  g.document = dom.window.document;
+
+  const valueService = new ValueService();
+
+  let error;
+
+  try {
+    render(
+      createElement(Provider, { valueService }, createElement(Value)),
+      dom.window.document.body
+    );
+  } catch (_) {
+    error = _;
+  }
+
+  t.is(!!error, true);
+
+  render(null, dom.window.document.body);
+});
+
 test.serial("observes", t => {
   class ValueService {
     constructor() {

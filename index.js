@@ -129,7 +129,7 @@ function decorate(klass, modifiers) {
 }
 
 /** @type {(...serviceNames: string[]) => <T>(klass: T) => T} */
-const inject = () => klass => {
+const inject = (...serviceNames) => klass => {
   /** @type {any} */
   const _ = klass;
 
@@ -138,10 +138,12 @@ const inject = () => klass => {
     render() {
       const props = {};
 
-      // tslint:disable:forin
-      for (let key in this.context) {
+      for (let i = 0; i < serviceNames.length; i++) {
+        const key = serviceNames[i];
         props[key] = this.context[key];
       }
+
+      // tslint:disable:forin
       for (let key in this.props) {
         props[key] = this.props[key];
       }
