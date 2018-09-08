@@ -1,4 +1,23 @@
+export const BrowserRouter: any;
+
+export class History {
+  public push(to: string): void;
+
+  public replace(to: string): void;
+}
+
+export const Link: (props: { to: string }) => any;
+
+// tslint:disable:max-classes-per-file
+export class Location {
+  public pathname: string;
+
+  public search: string;
+}
+
 export const Provider: any;
+
+export const StaticRouter: (props: { location: Location }) => any;
 
 export function autorun(x: () => void): () => void;
 
@@ -18,9 +37,11 @@ export function matchPath(
 
 export const observable: { ref: "Only observable.ref is supported." };
 
-export function observer<T>(klass: T): T;
+export function observer<T>(klass: T): T & { isObserver: true };
 
 export function useStaticRendering(value: boolean): undefined;
+
+export function withRouter<T extends { isObserver: true }>(klass: T): T;
 
 type Y<T> = { [P in keyof T]?: "Only observable.ref is supported." };
 

@@ -6,14 +6,19 @@ const { Component, render } = require("inferno");
 const { createElement } = require("inferno-create-element");
 const nullthrows = require("nullthrows").default;
 const {
+  BrowserRouter,
+  Link,
+  Location,
+  Provider,
+  StaticRouter,
   autorun,
   decorate,
   inject,
   matchPath,
   observable,
   observer,
-  Provider,
-  useStaticRendering
+  useStaticRendering,
+  withRouter
 } = require("./index");
 
 test("autoruns", t => {
@@ -311,6 +316,81 @@ test.serial("injects, skipping names not mentioned", t => {
   }
 
   t.is(!!error, true);
+
+  render(null, dom.window.document.body);
+});
+
+test.serial("links, injecting browser history", t => {
+  /**
+   * @typedef IProps
+   * @property {Location} location
+   *
+   * @extends Component<IProps>
+   */
+  class NavView extends Component {
+    render() {
+      const { pathname, search } = this.props.location;
+      return createElement(Link, { to: `${pathname}?123` }, pathname + search);
+    }
+  }
+
+  const Nav = withRouter(observer(NavView));
+
+  // @ts-ignore
+  const g = global;
+  const dom = new JSDOM();
+  g.document = dom.window.document;
+  g.window = dom.window;
+
+  dom.reconfigure({ url: "https://example.com/test" });
+
+  render(
+    createElement(BrowserRouter, undefined, createElement(Nav)),
+    dom.window.document.body
+  );
+
+  const $a = dom.window.document.querySelector("a");
+  t.is($a.textContent, "/test");
+
+  $a.onclick();
+  t.is($a.textContent, "/test?123");
+
+  render(null, dom.window.document.body);
+});
+
+test.serial("links, injecting static location", t => {
+  /**
+   * @typedef IProps
+   * @property {{ pathname: string, search: string }} location
+   *
+   * @extends Component<IProps>
+   */
+  class NavView extends Component {
+    render() {
+      const { pathname, search } = this.props.location;
+      return createElement(Link, { to: `${pathname}?123` }, pathname + search);
+    }
+  }
+
+  const Nav = withRouter(observer(NavView));
+
+  // @ts-ignore
+  const g = global;
+  const dom = new JSDOM();
+  g.document = dom.window.document;
+
+  const location = { pathname: "/test", search: "" };
+
+  render(
+    createElement(StaticRouter, { location }, createElement(Nav)),
+    dom.window.document.body
+  );
+
+  const $a = dom.window.document.querySelector("a");
+  t.is($a.textContent, "/test");
+
+  $a.onclick();
+  t.is($a.textContent, "/test");
 
   render(null, dom.window.document.body);
 });

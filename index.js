@@ -1,4 +1,5 @@
-const { Component, createComponentVNode } = require("inferno");
+// tslint:disable:forin
+const { Component, createComponentVNode, createVNode } = require("inferno");
 
 const $ = new class ModuleState {
   constructor() {
@@ -70,9 +71,77 @@ const $ = new class ModuleState {
   }
 }();
 
+class BrowserRouter extends Component {
+  constructor(/** @type {any} */ props) {
+    super(props);
+
+    this.push = (/** @type {string} */ path) => {
+      window.history.pushState(undefined, undefined, path);
+      this.update();
+    };
+
+    this.update = () =>
+      (this.location = {
+        pathname: window.location.pathname,
+        search: window.location.search
+      });
+
+    this.update();
+  }
+
+  componentDidMount() {
+    window.addEventListener("popstate", this.update);
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener("popstate", this.update);
+  }
+
+  getChildContext() {
+    return { history: this };
+  }
+
+  render() {
+    return this.props.children;
+  }
+}
+
+/** @extends {Component<{ className?: string, history?: BrowserRouter, to: string }>} */
+class Link extends Component {
+  render() {
+    const { history } = this.props;
+
+    return createVNode(
+      1,
+      "a",
+      this.props.className,
+      this.props.children,
+      0,
+      {
+        href: this.props.to,
+        onclick: () =>
+          !!history && !!history.push && !!history.push(this.props.to)
+      },
+      undefined,
+      undefined
+    );
+  }
+}
+
 class Provider extends Component {
   getChildContext() {
     return this.props;
+  }
+
+  render() {
+    return this.props.children;
+  }
+}
+
+/** @extends Component<{ location: typeof BrowserRouter.prototype.location }> */
+class StaticRouter extends Component {
+  getChildContext() {
+    return { history: { location: this.props.location } };
   }
 
   render() {
@@ -141,13 +210,15 @@ const inject = (...serviceNames) => klass => {
       for (let i = 0; i < serviceNames.length; i++) {
         const key = serviceNames[i];
         props[key] = this.context[key];
+
+        if (key === "history") {
+          props.location = props[key].location;
+        }
       }
 
-      // tslint:disable:forin
       for (let key in this.props) {
         props[key] = this.props[key];
       }
-      // tslint:enable:forin
 
       return createComponentVNode(4, _, props, null, null);
     }
@@ -186,7 +257,7 @@ function isObservableProp(target, key) {
  */
 function matchPath(pathname, props) {
   if (!props.path) {
-    return true;
+    return { params: {} };
   }
 
   const names = [""];
@@ -229,6 +300,7 @@ const observable = { ref: "Only observable.ref is supported." };
 function observer(klass) {
   /** @type {any} */
   const _ = klass;
+  _.isObserver = true;
 
   /** @type {typeof $.subscriptions} */
   const subscriptions = [];
@@ -296,7 +368,14 @@ function useStaticRendering(value) {
  * @property {{ key: string, target: any }[]} subscriptions
  */
 
+decorate(BrowserRouter, { location: observable.ref });
+
+exports.BrowserRouter = BrowserRouter;
+exports.History = BrowserRouter;
+exports.Link = inject("history")(Link);
+exports.Location = {};
 exports.Provider = Provider;
+exports.StaticRouter = StaticRouter;
 exports.autorun = autorun;
 exports.decorate = decorate;
 exports.inject = inject;
@@ -305,3 +384,4 @@ exports.matchPath = matchPath;
 exports.observable = observable;
 exports.observer = observer;
 exports.useStaticRendering = useStaticRendering;
+exports.withRouter = (/** @type {any} */ _) => observer(inject("history")(_));
