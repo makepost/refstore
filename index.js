@@ -82,8 +82,8 @@ class BrowserRouter extends Component {
 
     this.update = () =>
       (this.location = {
-        pathname: window.location.pathname,
-        search: window.location.search
+        pathname: decodeURI(window.location.pathname),
+        search: decodeURI(window.location.search)
       });
 
     this.update();

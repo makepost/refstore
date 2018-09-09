@@ -912,6 +912,60 @@ test.serial("routes, adding match to context", t => {
   render(null, dom.window.document.body);
 });
 
+test.serial("routes, decoding uri", t => {
+  /**
+   * @typedef IProps
+   * @property {Location} location
+   * @property {{ params: { id: string, test: string } }} match
+   *
+   * @extends Component<IProps>
+   */
+  class MatchScreen extends Component {
+    render() {
+      const { pathname, search } = this.props.location;
+      const { params } = this.props.match;
+
+      return createElement(
+        "pre",
+        undefined,
+        JSON.stringify({ params, pathname, search })
+      );
+    }
+  }
+
+  // @ts-ignore
+  const g = global;
+  const dom = new JSDOM();
+  g.document = dom.window.document;
+  g.window = dom.window;
+  dom.reconfigure({
+    url: `https://example.com/маршрути/${encodeURIComponent(
+      "бус-123к"
+    )}?${encodeURIComponent("рейси")}=${encodeURIComponent("всі")}`
+  });
+
+  render(
+    createElement(
+      BrowserRouter,
+      undefined,
+      createElement(Route, { component: MatchScreen, path: "/:id/:test" })
+    ),
+    dom.window.document.body
+  );
+
+  const pre = dom.window.document.querySelector("pre");
+  t.is(
+    pre.textContent,
+    JSON.stringify({
+      params: { id: "маршрути", test: "бус-123к" },
+      pathname: "/маршрути/бус-123к",
+      search: "?рейси=всі"
+    })
+  );
+
+  render(null, dom.window.document.body);
+});
+
 test.serial("routes, showing route that allows any path", t => {
   /**
    * @typedef IProps
