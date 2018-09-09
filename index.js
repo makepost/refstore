@@ -138,6 +138,34 @@ class Provider extends Component {
   }
 }
 
+/** @extends {Component<{ component: any, history: BrowserRouter, path?: string }>} */
+class Route extends Component {
+  get match() {
+    return this.props.path
+      ? matchPath(this.props.history.location.pathname, this.props)
+      : { params: {} };
+  }
+
+  getChildContext() {
+    return { route: this };
+  }
+
+  render() {
+    const { component, history } = this.props;
+    const match = this.match;
+
+    return match
+      ? createComponentVNode(
+          4,
+          component,
+          { history, location: history.location, match },
+          null,
+          null
+        )
+      : null;
+  }
+}
+
 /** @extends Component<{ location: typeof BrowserRouter.prototype.location }> */
 class StaticRouter extends Component {
   getChildContext() {
@@ -214,6 +242,10 @@ const inject = (...serviceNames) => klass => {
         if (key === "history") {
           props.location = props[key].location;
         }
+
+        if (key === "route" && props[key]) {
+          props.match = props[key].match || { params: {} };
+        }
       }
 
       for (let key in this.props) {
@@ -283,7 +315,11 @@ function matchPath(pathname, props) {
   const params = {};
 
   for (let i = 1; i < names.length; i++) {
-    params[names[i]] = matches[i - 1];
+    const name = names[i];
+
+    if (name) {
+      params[name] = matches[i - 1];
+    }
   }
 
   return { params };
@@ -375,6 +411,7 @@ exports.History = BrowserRouter;
 exports.Link = inject("history")(Link);
 exports.Location = {};
 exports.Provider = Provider;
+exports.Route = inject("history")(observer(Route));
 exports.StaticRouter = StaticRouter;
 exports.autorun = autorun;
 exports.decorate = decorate;
@@ -384,4 +421,5 @@ exports.matchPath = matchPath;
 exports.observable = observable;
 exports.observer = observer;
 exports.useStaticRendering = useStaticRendering;
-exports.withRouter = (/** @type {any} */ _) => observer(inject("history")(_));
+exports.withRouter = (/** @type {any} */ _) =>
+  observer(inject("history", "route")(_));

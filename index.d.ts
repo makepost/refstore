@@ -17,6 +17,10 @@ export class Location {
 
 export const Provider: any;
 
+export const Route: (
+  props: { component: any; exact?: boolean; path?: string }
+) => any;
+
 export const StaticRouter: (props: { location: Location }) => any;
 
 export function autorun(x: () => void): () => void;

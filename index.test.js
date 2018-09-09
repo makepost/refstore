@@ -7,9 +7,11 @@ const { createElement } = require("inferno-create-element");
 const nullthrows = require("nullthrows").default;
 const {
   BrowserRouter,
+  History,
   Link,
   Location,
   Provider,
+  Route,
   StaticRouter,
   autorun,
   decorate,
@@ -758,6 +760,223 @@ test.serial("observes, unmounting correctly after mount error", t => {
 
   t.is(mounts, 1);
   t.is(unmounts, 1);
+});
+
+test.serial("routes", t => {
+  /**
+   * @typedef IProps
+   * @property {History} history
+   * @property {Location} location
+   * @property {{ params: { id: string, test: string } }} match
+   *
+   * @extends Component<IProps>
+   */
+  class MatchScreen extends Component {
+    render() {
+      const { push } = this.props.history;
+      const { pathname } = this.props.location;
+      const { params } = this.props.match;
+
+      return createElement(
+        "button",
+        {
+          onclick: () =>
+            push(pathname === "/settings/1" ? "/settings/012" : "/settings")
+        },
+        JSON.stringify({ params, pathname })
+      );
+    }
+  }
+
+  // @ts-ignore
+  const g = global;
+  const dom = new JSDOM();
+  g.document = dom.window.document;
+  g.window = dom.window;
+  dom.reconfigure({ url: "https://example.com/settings/1" });
+
+  render(
+    createElement(
+      BrowserRouter,
+      undefined,
+      createElement(Route, {
+        component: MatchScreen,
+        path: "/:id/:test([0-9]+)"
+      })
+    ),
+    dom.window.document.body
+  );
+
+  const $btn = dom.window.document.querySelector("button");
+  t.is(
+    $btn.textContent,
+    JSON.stringify({
+      params: { id: "settings", test: "1" },
+      pathname: "/settings/1"
+    })
+  );
+
+  $btn.onclick();
+  t.is(
+    $btn.textContent,
+    JSON.stringify({
+      params: { id: "settings", test: "012" },
+      pathname: "/settings/012"
+    })
+  );
+
+  $btn.onclick();
+  t.is(dom.window.document.querySelector("button"), null);
+
+  render(null, dom.window.document.body);
+});
+
+test.serial("routes, adding match to context", t => {
+  /**
+   * @typedef IProps
+   * @property {History?} [history]
+   * @property {Location?} [location]
+   * @property {{ params: { id: string, test: string } }?} [match]
+   *
+   * @extends Component<IProps>
+   */
+  class MatchView extends Component {
+    render() {
+      const { push } = nullthrows(this.props.history);
+      const { pathname } = nullthrows(this.props.location);
+      const { params } = nullthrows(this.props.match);
+
+      return createElement(
+        "button",
+        {
+          onclick: () =>
+            push(pathname === "/settings/1" ? "/settings/012" : "/settings")
+        },
+        JSON.stringify({
+          params,
+          pathname
+        })
+      );
+    }
+  }
+
+  const Match = withRouter(observer(MatchView));
+
+  class MatchScreen extends Component {
+    render() {
+      return createElement(Match);
+    }
+  }
+
+  // @ts-ignore
+  const g = global;
+  const dom = new JSDOM();
+  g.document = dom.window.document;
+  g.window = dom.window;
+  dom.reconfigure({ url: "https://example.com/settings/1" });
+
+  render(
+    createElement(
+      BrowserRouter,
+      undefined,
+      createElement(Route, {
+        component: MatchScreen,
+        path: "/:id/:test([0-9]+)"
+      })
+    ),
+    dom.window.document.body
+  );
+
+  const $btn = dom.window.document.querySelector("button");
+  t.is(
+    $btn.textContent,
+    JSON.stringify({
+      params: { id: "settings", test: "1" },
+      pathname: "/settings/1"
+    })
+  );
+
+  $btn.onclick();
+  t.is(
+    $btn.textContent,
+    JSON.stringify({
+      params: { id: "settings", test: "012" },
+      pathname: "/settings/012"
+    })
+  );
+
+  $btn.onclick();
+  t.is(dom.window.document.querySelector("button"), null);
+
+  render(null, dom.window.document.body);
+});
+
+test.serial("routes, showing route that allows any path", t => {
+  /**
+   * @typedef IProps
+   * @property {History?} [history]
+   * @property {Location?} [location]
+   * @property {{ params: { id: string, test: string } }?} [match]
+   *
+   * @extends Component<IProps>
+   */
+  class MatchView extends Component {
+    render() {
+      const { push } = nullthrows(this.props.history);
+      const { pathname } = nullthrows(this.props.location);
+      const { params } = nullthrows(this.props.match);
+
+      return createElement(
+        "button",
+        {
+          onclick: () =>
+            push(pathname === "/settings/1" ? "/settings/012" : "/settings")
+        },
+        JSON.stringify({ params, pathname })
+      );
+    }
+  }
+
+  const Match = withRouter(observer(MatchView));
+
+  class MatchScreen extends Component {
+    render() {
+      return createElement(Match);
+    }
+  }
+
+  // @ts-ignore
+  const g = global;
+  const dom = new JSDOM();
+  g.document = dom.window.document;
+  g.window = dom.window;
+  dom.reconfigure({ url: "https://example.com/settings/1" });
+
+  render(
+    createElement(
+      BrowserRouter,
+      undefined,
+      createElement(Route, { component: MatchScreen })
+    ),
+    dom.window.document.body
+  );
+
+  const $btn = dom.window.document.querySelector("button");
+  t.is(
+    $btn.textContent,
+    JSON.stringify({ params: {}, pathname: "/settings/1" })
+  );
+
+  $btn.onclick();
+  t.is(
+    $btn.textContent,
+    JSON.stringify({ params: {}, pathname: "/settings/012" })
+  );
+
+  $btn.onclick();
+  t.is($btn.textContent, JSON.stringify({ params: {}, pathname: "/settings" }));
+
+  render(null, dom.window.document.body);
 });
 
 test.serial("uses static rendering", t => {
