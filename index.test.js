@@ -13,6 +13,7 @@ const {
   Provider,
   Route,
   StaticRouter,
+  Switch,
   autorun,
   decorate,
   inject,
@@ -977,6 +978,215 @@ test.serial("routes, showing route that allows any path", t => {
   t.is($btn.textContent, JSON.stringify({ params: {}, pathname: "/settings" }));
 
   render(null, dom.window.document.body);
+});
+
+test.serial("switches", t => {
+  class HomeScreen extends Component {
+    render() {
+      return createElement("h1", undefined, "Welcome home");
+    }
+  }
+
+  /** @extends {Component<{ match: { params: { name: string, value: string } } }>} */
+  class InputScreen extends Component {
+    render() {
+      return createElement("input", this.props.match.params);
+    }
+  }
+
+  class NotFoundScreen extends Component {
+    render() {
+      return createElement("marquee", undefined, "n o t   f o u n d");
+    }
+  }
+
+  // @ts-ignore
+  const g = global;
+  const dom = new JSDOM();
+  g.document = dom.window.document;
+  g.window = dom.window;
+  dom.reconfigure({ url: "https://example.com/settings/012" });
+
+  /** @type {any} */
+  let history = null;
+
+  render(
+    createElement(
+      BrowserRouter,
+      { ref: (/** @type {any} */ _) => (history = _) },
+      createElement(
+        Switch,
+        undefined,
+        createElement(Route, { component: HomeScreen, exact: true, path: "/" }),
+        createElement(Route, { component: InputScreen, path: "/:name/:value" }),
+        createElement(Route, { component: NotFoundScreen })
+      )
+    ),
+    dom.window.document.body
+  );
+
+  let $input = dom.window.document.querySelector("input");
+  let $h1 = dom.window.document.querySelector("h1");
+  let $marquee = dom.window.document.querySelector("marquee");
+  t.is($input.name, "settings");
+  t.is($input.value, "012");
+  t.is($h1, null);
+  t.is($marquee, null);
+
+  history.push("/");
+  $input = dom.window.document.querySelector("input");
+  $h1 = dom.window.document.querySelector("h1");
+  $marquee = dom.window.document.querySelector("marquee");
+  t.is($input, null);
+  t.is($h1.textContent, "Welcome home");
+  t.is($marquee, null);
+
+  history.push("/settings");
+  $input = dom.window.document.querySelector("input");
+  $h1 = dom.window.document.querySelector("h1");
+  $marquee = dom.window.document.querySelector("marquee");
+  t.is($input, null);
+  t.is($h1, null);
+  t.is($marquee.textContent, "n o t   f o u n d");
+
+  render(null, dom.window.document.body);
+});
+
+test.serial("switches, defaulting to null if no fallback", t => {
+  class HomeScreen extends Component {
+    render() {
+      return createElement("h1", undefined, "Welcome home");
+    }
+  }
+
+  /** @extends {Component<{ match: { params: { name: string, value: string } } }>} */
+  class InputScreen extends Component {
+    render() {
+      return createElement("input", this.props.match.params);
+    }
+  }
+
+  // @ts-ignore
+  const g = global;
+  const dom = new JSDOM();
+  g.document = dom.window.document;
+  g.window = dom.window;
+  dom.reconfigure({ url: "https://example.com/settings/012" });
+
+  /** @type {any} */
+  let history = null;
+
+  render(
+    createElement(
+      BrowserRouter,
+      { ref: (/** @type {any} */ _) => (history = _) },
+      createElement(
+        Switch,
+        undefined,
+        createElement(Route, { component: HomeScreen, exact: true, path: "/" }),
+        createElement(Route, { component: InputScreen, path: "/:name/:value" })
+      )
+    ),
+    dom.window.document.body
+  );
+
+  let $input = dom.window.document.querySelector("input");
+  let $h1 = dom.window.document.querySelector("h1");
+  t.is($input.name, "settings");
+  t.is($input.value, "012");
+  t.is($h1, null);
+
+  history.push("/");
+  $input = dom.window.document.querySelector("input");
+  $h1 = dom.window.document.querySelector("h1");
+  t.is($input, null);
+  t.is($h1.textContent, "Welcome home");
+
+  history.push("/settings");
+  $input = dom.window.document.querySelector("input");
+  $h1 = dom.window.document.querySelector("h1");
+  t.is($input, null);
+  t.is($h1, null);
+
+  render(null, dom.window.document.body);
+});
+
+test.serial("switches, using static rendering", t => {
+  class HomeScreen extends Component {
+    render() {
+      return createElement("h1", undefined, "Welcome home");
+    }
+  }
+
+  /** @extends {Component<{ match: { params: { name: string, value: string } } }>} */
+  class InputScreen extends Component {
+    render() {
+      return createElement("input", this.props.match.params);
+    }
+  }
+
+  class NotFoundScreen extends Component {
+    render() {
+      return createElement("marquee", undefined, "n o t   f o u n d");
+    }
+  }
+
+  // @ts-ignore
+  const g = global;
+  const dom = new JSDOM();
+  g.document = dom.window.document;
+
+  useStaticRendering(true);
+  const go = (/** @type {string} */ pathname) =>
+    render(
+      createElement(
+        StaticRouter,
+        { location: { pathname, search: "" } },
+        createElement(
+          Switch,
+          undefined,
+          createElement(Route, {
+            component: HomeScreen,
+            exact: true,
+            path: "/"
+          }),
+          createElement(Route, {
+            component: InputScreen,
+            path: "/:name/:value"
+          }),
+          createElement(Route, { component: NotFoundScreen })
+        )
+      ),
+      dom.window.document.body
+    );
+
+  go("/settings/012");
+  let $input = dom.window.document.querySelector("input");
+  let $h1 = dom.window.document.querySelector("h1");
+  let $marquee = dom.window.document.querySelector("marquee");
+  t.is($input.name, "settings");
+  t.is($input.value, "012");
+  t.is($h1, null);
+  t.is($marquee, null);
+
+  go("/");
+  $input = dom.window.document.querySelector("input");
+  $h1 = dom.window.document.querySelector("h1");
+  $marquee = dom.window.document.querySelector("marquee");
+  t.is($input, null);
+  t.is($h1.textContent, "Welcome home");
+  t.is($marquee, null);
+
+  go("/settings");
+  $input = dom.window.document.querySelector("input");
+  $h1 = dom.window.document.querySelector("h1");
+  $marquee = dom.window.document.querySelector("marquee");
+  t.is($input, null);
+  t.is($h1, null);
+  t.is($marquee.textContent, "n o t   f o u n d");
+
+  render(null, dom.window.document.body);
+  useStaticRendering(false);
 });
 
 test.serial("uses static rendering", t => {

@@ -166,7 +166,7 @@ class Route extends Component {
   }
 }
 
-/** @extends Component<{ location: typeof BrowserRouter.prototype.location }> */
+/** @extends {Component<{ location: typeof BrowserRouter.prototype.location }>} */
 class StaticRouter extends Component {
   getChildContext() {
     return { history: { location: this.props.location } };
@@ -174,6 +174,24 @@ class StaticRouter extends Component {
 
   render() {
     return this.props.children;
+  }
+}
+
+/** @extends {Component<{ children: any[], location: typeof BrowserRouter.prototype.location }>} */
+class Switch extends Component {
+  render() {
+    const routes = this.props.children;
+    const { pathname } = this.props.location;
+
+    for (let i = 0; i < routes.length; i++) {
+      const route = routes[i];
+
+      if (matchPath(pathname, route.props)) {
+        return route;
+      }
+    }
+
+    return null;
   }
 }
 
@@ -413,6 +431,7 @@ exports.Location = {};
 exports.Provider = Provider;
 exports.Route = inject("history")(observer(Route));
 exports.StaticRouter = StaticRouter;
+exports.Switch = observer(inject("history")(Switch));
 exports.autorun = autorun;
 exports.decorate = decorate;
 exports.inject = inject;

@@ -1,4 +1,4 @@
-export const BrowserRouter: any;
+export const BrowserRouter: () => any;
 
 export class History {
   public push(to: string): void;
@@ -15,13 +15,15 @@ export class Location {
   public search: string;
 }
 
-export const Provider: any;
+export const Provider: (props: any) => any;
 
 export const Route: (
   props: { component: any; exact?: boolean; path?: string }
 ) => any;
 
 export const StaticRouter: (props: { location: Location }) => any;
+
+export const Switch: () => any;
 
 export function autorun(x: () => void): () => void;
 
