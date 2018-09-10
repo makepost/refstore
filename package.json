@@ -1,7 +1,7 @@
 {
   "name": "refstore",
   "version": "1.0.1",
-  "description": "State management for Inferno. Tiny bundle. MobX-like API",
+  "description": "State management for Inferno. Tiny bundle. MobX-like API. Built-in optional router",
   "main": "index.dist",
   "types": "index.dist",
   "scripts": {
@@ -12,6 +12,7 @@
   "keywords": [
     "inferno",
     "observable",
+    "router",
     "state management"
   ],
   "author": "makepost <makepost@firemail.cc>",

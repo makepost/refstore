@@ -1,6 +1,6 @@
 # refstore
 
-State management for Inferno. Tiny bundle, MobX-like API.
+State management for Inferno. [Tiny bundle](https://bundlephobia.com/result?p=refstore), MobX-like API. Built-in optional router.
 
 ## Usage
 
@@ -35,7 +35,7 @@ import { inject, observer } from "refstore";
 
 /**
  * @typedef IProps
- * @property {string} id
+ * @property {{ params: { id: string } }} match
  * @property {LocaleService} localeService
  * @property {PostService} postService
  *
@@ -43,17 +43,18 @@ import { inject, observer } from "refstore";
  */
 export class PostScreenView extends Component {
   componentDidMount() {
-    this.props.postService.get(this.props.id);
+    this.props.postService.get(this.props.match.params.id);
   }
 
   render() {
     const { formatTime } = this.props.localeService;
+    const { params } = this.props.match;
     const { posts } = this.props.postService;
 
-    const post = (posts || {})[this.props.id] || new Post();
+    const post = (posts || {})[params.id] || new Post();
 
     return (
-      <blockquote id={this.props.id}>
+      <blockquote id={params.id}>
         <small>
           {post.name} {formatTime(post.createdAt)}
         </small>
@@ -69,7 +70,32 @@ export const PostScreen = inject("localeService", "postService")(
 );
 ```
 
-See practical examples at https://github.com/makepost/serverside, import `refstore` where it has MobX.
+Configure the routes:
+
+```js
+import { Route, Switch } from "refstore";
+
+export class App extends Component {
+  static routes = [
+    { component: HomeScreen, exact: true, path: "/" },
+    { component: PostScreen, "/posts/:id" }
+  ];
+
+  render() {
+    return (
+      <Switch>
+        {App.routes.map(route => (
+          <Route {...route} />
+        ))}
+      </Switch>
+    );
+  }
+}
+```
+
+See practical examples at https://github.com/makepost/serverside, import `refstore` everywhere it has MobX or React Router.
+
+[TypeScript definitions](./index.d.ts) list components and other exports, which should be familiar if you have used the libraries mentioned above: BrowserRouter, History, Link, Location, Provider, Route, StaticRouter, Switch, autorun, decorate, inject, isObservableProp, matchPath, observable, observer, useStaticRendering, withRouter.
 
 ## License
 
