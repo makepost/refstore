@@ -966,6 +966,147 @@ test.serial("routes, decoding uri", t => {
   render(null, dom.window.document.body);
 });
 
+test.serial("routes, not interfering with regular observers", t => {
+  class HomeService {
+    constructor() {
+      this.value = "";
+    }
+  }
+
+  decorate(HomeService, { value: observable.ref });
+
+  /** @extends {Component<{homeService?: HomeService}>} */
+  class HomeScreenView extends Component {
+    render() {
+      const { value } = nullthrows(this.props.homeService);
+
+      return createElement("textarea", {
+        oninput: (/** @type {any} */ ev) =>
+          (nullthrows(this.props.homeService).value = ev.target.value),
+        value
+      });
+    }
+  }
+
+  const HomeScreen = inject("homeService")(observer(HomeScreenView));
+
+  class ValueService {
+    constructor() {
+      this.value = "";
+    }
+  }
+
+  decorate(ValueService, { value: observable.ref });
+
+  /** @extends {Component<{ valueService?: ValueService}>} */
+  class ValueScreenView extends Component {
+    render() {
+      const { value } = nullthrows(this.props.valueService);
+
+      return createElement("input", {
+        oninput: (/** @type {any} */ ev) =>
+          (nullthrows(this.props.valueService).value = ev.target.value),
+        value
+      });
+    }
+  }
+
+  const ValueScreen = inject("valueService")(observer(ValueScreenView));
+
+  // @ts-ignore
+  const g = global;
+  const dom = new JSDOM();
+  g.document = dom.window.document;
+  g.window = dom.window;
+  dom.reconfigure({ url: "https://example.com/" });
+
+  const homeService = new HomeService();
+  const valueService = new ValueService();
+
+  /** @type {any} */
+  let history = null;
+
+  render(
+    createElement(
+      Provider,
+      { homeService, valueService },
+      createElement(
+        BrowserRouter,
+        { ref: _ => (history = _) },
+        createElement(
+          "div",
+          undefined,
+          createElement(Route, {
+            component: HomeScreen,
+            exact: true,
+            path: "/"
+          }),
+          createElement(Route, { component: ValueScreen, path: "/value" })
+        )
+      )
+    ),
+    dom.window.document.body
+  );
+
+  let $home = dom.window.document.querySelector("textarea");
+  let $value = dom.window.document.querySelector("input");
+  t.is(homeService.value, "");
+  t.is($home.value, "");
+  t.is(valueService.value, "");
+  t.is($value, null);
+
+  $home.oninput({
+    stopPropagation: () => undefined,
+    target: { value: "test" }
+  });
+  $home = dom.window.document.querySelector("textarea");
+  $value = dom.window.document.querySelector("input");
+  t.is(homeService.value, "test");
+  t.is($home.value, "test");
+  t.is(valueService.value, "");
+  t.is($value, null);
+
+  history.push("/value");
+  $home = dom.window.document.querySelector("textarea");
+  $value = dom.window.document.querySelector("input");
+  t.is(homeService.value, "test");
+  t.is($home, null);
+  t.is(valueService.value, "");
+  t.is($value.value, "");
+
+  $value.oninput({
+    stopPropagation: () => undefined,
+    target: { value: "foobar" }
+  });
+  $home = dom.window.document.querySelector("textarea");
+  $value = dom.window.document.querySelector("input");
+  t.is(homeService.value, "test");
+  t.is($home, null);
+  t.is(valueService.value, "foobar");
+  t.is($value.value, "foobar");
+
+  history.push("/");
+  $home = dom.window.document.querySelector("textarea");
+  $value = dom.window.document.querySelector("input");
+  t.is(homeService.value, "test");
+  t.is($home.value, "test");
+  t.is(valueService.value, "foobar");
+  t.is($value, null);
+
+  $home.oninput({
+    stopPropagation: () => undefined,
+    target: { value: "bazqux" }
+  });
+  $home = dom.window.document.querySelector("textarea");
+  $value = dom.window.document.querySelector("input");
+  t.is(homeService.value, "bazqux");
+  t.is($home.value, "bazqux");
+  t.is(valueService.value, "foobar");
+  t.is($value, null);
+
+  render(null, dom.window.document.body);
+});
+
 test.serial("routes, showing route that allows any path", t => {
   /**
    * @typedef IProps
@@ -1161,6 +1302,147 @@ test.serial("switches, defaulting to null if no fallback", t => {
   $h1 = dom.window.document.querySelector("h1");
   t.is($input, null);
   t.is($h1, null);
+
+  render(null, dom.window.document.body);
+});
+
+test.serial("switches, not interfering with regular observers", t => {
+  class HomeService {
+    constructor() {
+      this.value = "";
+    }
+  }
+
+  decorate(HomeService, { value: observable.ref });
+
+  /** @extends {Component<{homeService?: HomeService}>} */
+  class HomeScreenView extends Component {
+    render() {
+      const { value } = nullthrows(this.props.homeService);
+
+      return createElement("textarea", {
+        oninput: (/** @type {any} */ ev) =>
+          (nullthrows(this.props.homeService).value = ev.target.value),
+        value
+      });
+    }
+  }
+
+  const HomeScreen = inject("homeService")(observer(HomeScreenView));
+
+  class ValueService {
+    constructor() {
+      this.value = "";
+    }
+  }
+
+  decorate(ValueService, { value: observable.ref });
+
+  /** @extends {Component<{ valueService?: ValueService}>} */
+  class ValueScreenView extends Component {
+    render() {
+      const { value } = nullthrows(this.props.valueService);
+
+      return createElement("input", {
+        oninput: (/** @type {any} */ ev) =>
+          (nullthrows(this.props.valueService).value = ev.target.value),
+        value
+      });
+    }
+  }
+
+  const ValueScreen = inject("valueService")(observer(ValueScreenView));
+
+  // @ts-ignore
+  const g = global;
+  const dom = new JSDOM();
+  g.document = dom.window.document;
+  g.window = dom.window;
+  dom.reconfigure({ url: "https://example.com/" });
+
+  const homeService = new HomeService();
+  const valueService = new ValueService();
+
+  /** @type {any} */
+  let history = null;
+
+  render(
+    createElement(
+      Provider,
+      { homeService, valueService },
+      createElement(
+        BrowserRouter,
+        { ref: _ => (history = _) },
+        createElement(
+          Switch,
+          undefined,
+          createElement(Route, {
+            component: HomeScreen,
+            exact: true,
+            path: "/"
+          }),
+          createElement(Route, { component: ValueScreen, path: "/value" })
+        )
+      )
+    ),
+    dom.window.document.body
+  );
+
+  let $home = dom.window.document.querySelector("textarea");
+  let $value = dom.window.document.querySelector("input");
+  t.is(homeService.value, "");
+  t.is($home.value, "");
+  t.is(valueService.value, "");
+  t.is($value, null);
+
+  $home.oninput({
+    stopPropagation: () => undefined,
+    target: { value: "test" }
+  });
+  $home = dom.window.document.querySelector("textarea");
+  $value = dom.window.document.querySelector("input");
+  t.is(homeService.value, "test");
+  t.is($home.value, "test");
+  t.is(valueService.value, "");
+  t.is($value, null);
+
+  history.push("/value");
+  $home = dom.window.document.querySelector("textarea");
+  $value = dom.window.document.querySelector("input");
+  t.is(homeService.value, "test");
+  t.is($home, null);
+  t.is(valueService.value, "");
+  t.is($value.value, "");
+
+  $value.oninput({
+    stopPropagation: () => undefined,
+    target: { value: "foobar" }
+  });
+  $home = dom.window.document.querySelector("textarea");
+  $value = dom.window.document.querySelector("input");
+  t.is(homeService.value, "test");
+  t.is($home, null);
+  t.is(valueService.value, "foobar");
+  t.is($value.value, "foobar");
+
+  history.push("/");
+  $home = dom.window.document.querySelector("textarea");
+  $value = dom.window.document.querySelector("input");
+  t.is(homeService.value, "test");
+  t.is($home.value, "test");
+  t.is(valueService.value, "foobar");
+  t.is($value, null);
+
+  $home.oninput({
+    stopPropagation: () => undefined,
+    target: { value: "bazqux" }
+  });
+  $home = dom.window.document.querySelector("textarea");
+  $value = dom.window.document.querySelector("input");
+  t.is(homeService.value, "bazqux");
+  t.is($home.value, "bazqux");
+  t.is(valueService.value, "foobar");
+  t.is($value, null);
 
   render(null, dom.window.document.body);
 });
