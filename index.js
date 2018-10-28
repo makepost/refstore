@@ -18,6 +18,7 @@ const $ = new class ModuleState {
    */
   defineObservables(target, prototype) {
     const keys = Object.getOwnPropertyNames(prototype);
+    /** @type {any} */
     const properties = {};
 
     for (let i = 0; i < keys.length; i++) {
@@ -76,7 +77,7 @@ class BrowserRouter extends Component {
     super(props);
 
     this.push = (/** @type {string} */ path) => {
-      window.history.pushState(undefined, undefined, path);
+      window.history.pushState(undefined, "", path);
       this.update();
     };
 
@@ -119,8 +120,16 @@ class Link extends Component {
       0,
       {
         href: this.props.to,
-        onclick: () =>
-          !!history && !!history.push && !!history.push(this.props.to)
+        onclick: (/** @type {MouseEvent} */ ev) => {
+          if (
+            history &&
+            history.push &&
+            !(ev.altKey || ev.button || ev.ctrlKey || ev.metaKey || ev.shiftKey)
+          ) {
+            ev.preventDefault();
+            history.push(this.props.to);
+          }
+        }
       },
       undefined,
       undefined
@@ -222,6 +231,7 @@ function autorun(x) {
  */
 function decorate(klass, modifiers) {
   const keys = Object.getOwnPropertyNames(modifiers);
+  /** @type {any} */
   const properties = {};
 
   for (let i = 0; i < keys.length; i++) {
@@ -251,6 +261,7 @@ const inject = (...serviceNames) => klass => {
   /** @type {any} */
   const __ = class extends Component {
     render() {
+      /** @type {any} */
       const props = {};
 
       for (let i = 0; i < serviceNames.length; i++) {
@@ -330,6 +341,7 @@ function matchPath(pathname, props) {
     return null;
   }
 
+  /** @type {{ [key: string]: string }} */
   const params = {};
 
   for (let i = 1; i < names.length; i++) {

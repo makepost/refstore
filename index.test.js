@@ -355,7 +355,9 @@ test.serial("links, injecting browser history", t => {
   const $a = dom.window.document.querySelector("a");
   t.is($a.textContent, "/test");
 
-  $a.onclick();
+  let didOverride = false;
+  $a.onclick({ preventDefault: () => (didOverride = true) });
+  t.is(didOverride, true);
   t.is($a.textContent, "/test?123");
 
   render(null, dom.window.document.body);
@@ -392,8 +394,56 @@ test.serial("links, injecting static location", t => {
   const $a = dom.window.document.querySelector("a");
   t.is($a.textContent, "/test");
 
-  $a.onclick();
+  $a.onclick({});
   t.is($a.textContent, "/test");
+
+  render(null, dom.window.document.body);
+});
+
+test.serial("links, keeping default modifier key behavior", t => {
+  /**
+   * @typedef IProps
+   * @property {Location} location
+   *
+   * @extends Component<IProps>
+   */
+  class NavView extends Component {
+    render() {
+      const { pathname, search } = this.props.location;
+      return createElement(Link, { to: `${pathname}?123` }, pathname + search);
+    }
+  }
+
+  const Nav = withRouter(observer(NavView));
+
+  // @ts-ignore
+  const g = global;
+  const dom = new JSDOM();
+  g.document = dom.window.document;
+  g.window = dom.window;
+
+  dom.reconfigure({ url: "https://example.com/test" });
+
+  render(
+    createElement(BrowserRouter, undefined, createElement(Nav)),
+    dom.window.document.body
+  );
+
+  const $a = dom.window.document.querySelector("a");
+  t.is($a.textContent, "/test");
+
+  $a.onclick({ altKey: true });
+  $a.onclick({ button: 1 });
+  $a.onclick({ button: 2 });
+  $a.onclick({ ctrlKey: true });
+  $a.onclick({ metaKey: true });
+  $a.onclick({ shiftKey: true });
+  t.is($a.textContent, "/test");
+
+  let didOverride = false;
+  $a.onclick({ button: 0, preventDefault: () => (didOverride = true) });
+  t.is(didOverride, true);
+  t.is($a.textContent, "/test?123");
 
   render(null, dom.window.document.body);
 });
