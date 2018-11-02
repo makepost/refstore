@@ -49,6 +49,47 @@ test("autoruns", t => {
   t.is(_, "Success.");
 });
 
+test("autoruns, ignoring unsubscribe repeat", t => {
+  let _ = "";
+  let _1 = "";
+
+  class ValueService {
+    constructor() {
+      this.value = "...";
+    }
+  }
+
+  decorate(ValueService, { value: observable.ref });
+
+  const valueService = new ValueService();
+  t.is(_, "");
+  t.is(_1, "");
+
+  const unsubscribe = autorun(() => (_ = valueService.value));
+  const unsubscribe1 = autorun(() => (_1 = valueService.value));
+  t.is(_, "...");
+  t.is(_1, "...");
+
+  valueService.value = "Success.";
+  t.is(_, "Success.");
+  t.is(_1, "Success.");
+
+  unsubscribe();
+  valueService.value = "1 keeps working.";
+  t.is(_, "Success.");
+  t.is(_1, "1 keeps working.");
+
+  unsubscribe();
+  valueService.value = "Untouched, 1 keeps working.";
+  t.is(_, "Success.");
+  t.is(_1, "Untouched, 1 keeps working.");
+
+  unsubscribe1();
+  valueService.value = "...";
+  t.is(_, "Success.");
+  t.is(_1, "Untouched, 1 keeps working."); // (No.)
+});
+
 test("decorates", t => {
   class ValueService {
     constructor() {

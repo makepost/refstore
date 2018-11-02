@@ -68,7 +68,13 @@ const $ = new class ModuleState {
   reaction(x) {
     this.observers.push(x);
 
-    return () => this.observers.splice(this.observers.indexOf(x), 1);
+    return () => {
+      const i = this.observers.indexOf(x);
+
+      if (i !== -1) {
+        this.observers.splice(i, 1);
+      }
+    };
   }
 }();
 
