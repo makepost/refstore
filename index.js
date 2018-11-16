@@ -43,12 +43,14 @@ const $ = new class ModuleState {
 
   /** @param {{ key: string, target: any }} subscription */
   forceUpdate(subscription) {
-    for (let i = 0; i < this.observers.length; i++) {
-      const x = this.observers[i];
-
-      for (let j = 0; j < x.subscriptions.length; j++) {
+    const xs = this.observers;
+    for (let i = xs.length - 1; i >= 0; i--) {
+      if (i >= xs.length) {
+        continue;
+      }
+      const x = xs[i];
+      for (let j = x.subscriptions.length - 1; j >= 0; j--) {
         const y = x.subscriptions[j];
-
         if (y.target === subscription.target && y.key === subscription.key) {
           x.forceUpdate();
           break;
@@ -270,7 +272,7 @@ const inject = (...serviceNames) => klass => {
         }
 
         if (key === "route" && props[key]) {
-          props.match = props[key].match || { params: {} };
+          props.match = props[key].match;
         }
       }
 
