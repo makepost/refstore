@@ -489,6 +489,84 @@ test.serial("links, keeping default modifier key behavior", t => {
   render(null, dom.window.document.body);
 });
 
+test.serial("links, noop if same", t => {
+  let i = 0;
+  /** @extends {Component<{ location: Location }>} */
+  class NavView extends Component {
+    render() {
+      const { pathname } = this.props.location;
+      return createElement(Link, { to: pathname }, `${++i}${pathname}`);
+    }
+  }
+  const Nav = withRouter(observer(NavView));
+
+  // @ts-ignore
+  const g = global;
+  const dom = new JSDOM();
+  Object.assign(g, { document: dom.window.document, window: dom.window });
+  g.document = dom.window.document;
+  g.window = dom.window;
+  dom.reconfigure({ url: "https://example.com/same" });
+
+  render(
+    createElement(BrowserRouter, undefined, createElement(Nav)),
+    dom.window.document.body
+  );
+
+  const $a = dom.window.document.querySelector("a");
+  t.is($a.textContent, "1/same");
+  let didOverride = false;
+  $a.onclick({ button: 0, preventDefault: () => (didOverride = true) });
+  t.is(didOverride, true);
+
+  const $a1 = dom.window.document.querySelector("a");
+  t.is($a1, $a);
+  t.is($a1.textContent, "1/same");
+
+  render(null, dom.window.document.body);
+});
+
+test.serial("links, noop if same query", t => {
+  let i = 0;
+  /** @extends {Component<{ location: Location }>} */
+  class NavView extends Component {
+    render() {
+      const { pathname, search } = this.props.location;
+      return createElement(
+        Link,
+        { to: `${pathname}${search}` },
+        `${++i}${pathname}${search}`
+      );
+    }
+  }
+  const Nav = withRouter(observer(NavView));
+
+  // @ts-ignore
+  const g = global;
+  const dom = new JSDOM();
+  Object.assign(g, { document: dom.window.document, window: dom.window });
+  g.document = dom.window.document;
+  g.window = dom.window;
+  dom.reconfigure({ url: "https://example.com/same?query" });
+
+  render(
+    createElement(BrowserRouter, undefined, createElement(Nav)),
+    dom.window.document.body
+  );
+
+  const $a = dom.window.document.querySelector("a");
+  t.is($a.textContent, "1/same?query");
+  let didOverride = false;
+  $a.onclick({ button: 0, preventDefault: () => (didOverride = true) });
+  t.is(didOverride, true);
+
+  const $a1 = dom.window.document.querySelector("a");
+  t.is($a1, $a);
+  t.is($a1.textContent, "1/same?query");
+
+  render(null, dom.window.document.body);
+});
+
 test("matches path", t => {
   const Screen = {
     Home: 0,
@@ -1393,6 +1471,64 @@ test.serial("switches, defaulting to null if no fallback", t => {
   $h1 = dom.window.document.querySelector("h1");
   t.is($input, null);
   t.is($h1, null);
+
+  render(null, dom.window.document.body);
+});
+
+test.serial("switches, fine with nested observers in multiple routes", t => {
+  class XsView extends Component {
+    render() {
+      return createElement(
+        "div",
+        undefined,
+        createElement(
+          Link,
+          { to: "/*" },
+          JSON.stringify(this.props.match.params)
+        ),
+        createElement(Y),
+        false
+      );
+    }
+  }
+  const Xs = observer(XsView);
+  class YView extends Component {
+    render() {
+      return null;
+    }
+  }
+  const Y = observer(YView);
+  // @ts-ignore
+  const g = global;
+  const dom = new JSDOM();
+  Object.assign(g, { document: dom.window.document, window: dom.window });
+  dom.reconfigure({ url: "https://example.com/foobar" });
+
+  render(
+    createElement(
+      Provider,
+      {},
+      createElement(
+        BrowserRouter,
+        undefined,
+        createElement(
+          Switch,
+          undefined,
+          createElement(Route, { component: Xs, path: "/:id(\\w.+)" }),
+          createElement(Route, { component: Xs, path: "/\\*" })
+        )
+      )
+    ),
+    dom.window.document.body
+  );
+  t.is(dom.window.document.querySelector("a").textContent, `{"id":"foobar"}`);
+
+  let didOverride = false;
+  dom.window.document
+    .querySelector("a")
+    .onclick({ preventDefault: () => (didOverride = true) });
+  t.is(didOverride, true);
+  t.is(dom.window.document.querySelector("a").textContent, `{}`);
 
   render(null, dom.window.document.body);
 });

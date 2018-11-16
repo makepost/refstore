@@ -12,10 +12,7 @@ const $ = new class ModuleState {
     this.useStaticRendering = false;
   }
 
-  /**
-   * @param {any} target
-   * @param {any} prototype
-   */
+  /** @param {any} target @param {any} prototype */
   defineObservables(target, prototype) {
     const keys = Object.getOwnPropertyNames(prototype);
     /** @type {any} */
@@ -44,9 +41,7 @@ const $ = new class ModuleState {
     Object.defineProperties(target, properties);
   }
 
-  /**
-   * @param {{ key: string, target: any }} subscription
-   */
+  /** @param {{ key: string, target: any }} subscription */
   forceUpdate(subscription) {
     for (let i = 0; i < this.observers.length; i++) {
       const x = this.observers[i];
@@ -62,9 +57,7 @@ const $ = new class ModuleState {
     }
   }
 
-  /**
-   * @param {IObserver} x
-   */
+  /** @param {IObserver} x */
   reaction(x) {
     this.observers.push(x);
 
@@ -83,6 +76,10 @@ class BrowserRouter extends Component {
     super(props);
 
     this.push = (/** @type {string} */ path) => {
+      const { pathname, search } = this.location;
+      if (path === pathname + search) {
+        return;
+      }
       window.history.pushState(undefined, "", path);
       this.update();
     };
@@ -192,11 +189,11 @@ class StaticRouter extends Component {
   }
 }
 
-/** @extends {Component<{ children: any[], location: typeof BrowserRouter.prototype.location }>} */
+/** @extends {Component<{ children: any[], history: BrowserRouter }>} */
 class Switch extends Component {
   render() {
     const routes = this.props.children;
-    const { pathname } = this.props.location;
+    const { pathname } = this.props.history.location;
 
     for (let i = 0; i < routes.length; i++) {
       const route = routes[i];
@@ -210,9 +207,7 @@ class Switch extends Component {
   }
 }
 
-/**
- * @param {() => void} x
- */
+/** @param {() => void} x */
 function autorun(x) {
   const klass = class {};
   klass.prototype.forceUpdate = x;
@@ -230,11 +225,7 @@ function autorun(x) {
   return () => instance.componentWillUnmount();
 }
 
-/**
- * @template T
- * @param {new(...args: any[])=>T} klass
- * @param {Y<T>} modifiers
- */
+/** @template T @param {new(...args: any[])=>T} klass @param {Y<T>} modifiers */
 function decorate(klass, modifiers) {
   const keys = Object.getOwnPropertyNames(modifiers);
   /** @type {any} */
@@ -308,20 +299,14 @@ const inject = (...serviceNames) => klass => {
   return __;
 };
 
-/**
- * @param {any} target
- * @param {string} key
- */
+/** @param {any} target @param {string} key */
 function isObservableProp(target, key) {
   const prop = Object.getOwnPropertyDescriptor(target, key);
 
   return !!prop && !!prop.get && !!prop.set;
 }
 
-/**
- * @param {string} pathname
- * @param {{ exact?: boolean, path?: string }} props
- */
+/** @param {string} pathname @param {{ exact?: boolean, path?: string }} props */
 function matchPath(pathname, props) {
   if (!props.path) {
     return { params: {} };
@@ -364,11 +349,7 @@ function matchPath(pathname, props) {
 /** @type {{ ref: "Only observable.ref is supported." }} */
 const observable = { ref: "Only observable.ref is supported." };
 
-/**
- * @template T
- * @param {T} klass
- * @returns {T}
- */
+/** @template T @param {T} klass @returns {T} */
 function observer(klass) {
   /** @type {any} */
   const _ = klass;
@@ -422,9 +403,7 @@ function observer(klass) {
   return _;
 }
 
-/**
- * @param {boolean} value
- */
+/** @param {boolean} value */
 function useStaticRendering(value) {
   $.useStaticRendering = value;
 }
@@ -449,7 +428,7 @@ exports.Location = {};
 exports.Provider = Provider;
 exports.Route = observer(inject("history")(observer(Route)));
 exports.StaticRouter = StaticRouter;
-exports.Switch = observer(inject("history")(Switch));
+exports.Switch = observer(inject("history")(observer(Switch)));
 exports.autorun = autorun;
 exports.decorate = decorate;
 exports.inject = inject;
